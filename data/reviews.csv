@@ -1,0 +1,25 @@
+review_id,product_name,rating,review_text,review_date
+R001,AeroBrew Coffee Maker,5,Excellent machine. Brews fast and the coffee tastes rich every morning.,2026-01-04
+R002,AeroBrew Coffee Maker,2,The carafe cracked after two weeks. Poor quality glass and weak handle.,2026-01-09
+R003,AeroBrew Coffee Maker,1,Arrived late and the box was crushed. Shipping was terrible and customer service never replied.,2026-01-12
+R004,PulseFit Smartwatch,4,Battery lasts all day and the screen is bright. Setup was easy.,2026-01-15
+R005,PulseFit Smartwatch,3,Okay watch but the heart rate reading seems average and the strap feels cheap.,2026-01-18
+R006,PulseFit Smartwatch,1,Stopped charging after a month. Defective charger and no replacement offered.,2026-01-21
+R007,CloudSoft Pillow,5,Very comfortable pillow. Sleep quality improved and the fabric is soft.,2026-02-01
+R008,CloudSoft Pillow,2,Flattened after a week. Support is poor and it smells strongly out of the package.,2026-02-03
+R009,CloudSoft Pillow,4,Good value for the price. A bit firm at first but it loosened up nicely.,2026-02-06
+R010,Nimbus Headphones,5,Noise cancellation is outstanding. Comfortable for long flights.,2026-02-10
+R011,Nimbus Headphones,2,Left ear cup rattles. Build quality is disappointing for this price.,2026-02-14
+R012,Nimbus Headphones,1,Delivery took three weeks. Package was damaged and the cable was missing.,2026-02-16
+R013,Nimbus Headphones,3,Sound is fine. Bass is average and they get warm after two hours.,2026-02-20
+R014,KitchenPro Blender,5,Blends frozen fruit smoothly. Powerful motor and easy to clean.,2026-03-01
+R015,KitchenPro Blender,1,Motor burned out on the second smoothie. Worst quality I have seen.,2026-03-04
+R016,KitchenPro Blender,2,Lid leaked all over the counter. Messy design and weak seal.,2026-03-08
+R017,AeroBrew Coffee Maker,4,Reliable daily brew. Warming plate works well. Wish it were a little quieter.,2026-03-11
+R018,PulseFit Smartwatch,5,Love the sleep tracking. Notifications are clear and the app is simple.,2026-03-15
+R019,CloudSoft Pillow,1,Customer service refused a return. Horrible experience after the zipper broke.,2026-03-18
+R020,KitchenPro Blender,4,Great for sauces. Instructions were clear and shipping was fast.,2026-03-22
+R021,Nimbus Headphones,4,Comfortable and clear calls. Case is sturdy. Price is a bit high.,2026-03-25
+R022,PulseFit Smartwatch,2,Band caused skin irritation. Cheap materials and slow software updates.,2026-03-28
+R023,AeroBrew Coffee Maker,3,Coffee is decent. Water tank is small so I refill often. Neutral overall.,2026-04-02
+R024,KitchenPro Blender,5,Replaced my old blender. Ice crushing is excellent and cleanup is quick.,2026-04-06
