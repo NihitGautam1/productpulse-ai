@@ -1,8 +1,10 @@
-"""Generative AI features (Claude via the Anthropic API).
+"""Generative AI features, using Google Gemini or Anthropic Claude.
 
 Configuration comes from environment variables (or a local .env file):
-    AI_API_KEY  - required to enable AI features (never hardcode it)
-    AI_MODEL    - optional, defaults to DEFAULT_MODEL
+    AI_API_KEY   - required to enable AI features (never hardcode it)
+    AI_PROVIDER  - optional: "gemini" or "anthropic". If not set, it is guessed from
+                   the key ("sk-ant-..." = anthropic, anything else = gemini)
+    AI_MODEL     - optional, defaults to DEFAULT_MODELS[provider]
 
 Everything else in ProductPulse AI works without these settings.
 
@@ -25,7 +27,13 @@ try:  # Optional: lets users keep settings in a local .env file.
 except ImportError:
     pass
 
-DEFAULT_MODEL = "claude-haiku-4-5"
+PROVIDERS = ("gemini", "anthropic")
+DEFAULT_MODELS = {
+    "gemini": "gemini-flash-latest",   # Google's alias for its current Flash model (free tier available)
+    "anthropic": "claude-haiku-4-5",
+}
+DEFAULT_MODEL = DEFAULT_MODELS["anthropic"]  # kept for backwards compatibility
+GEMINI_FALLBACK_MODEL = "gemini-flash-lite-latest"  # used once if the main Gemini model is overloaded
 
 # Large-dataset limits: keep requests small, fast and cheap.
 MAX_REVIEWS_FOR_AI = 1500   # most recent reviews sent to the AI
@@ -40,7 +48,7 @@ NOT_CONFIGURED_MESSAGE = (
 GROUNDING_RULES = """You analyse customer reviews of products for a business.
 Rules:
 - Use ONLY information contained in the supplied reviews and statistics. Never invent facts, numbers, features or customer opinions.
-- Each review starts with its ID in square brackets, e.g. [R001]. Support every claim about customers by citing the IDs of reviews that show it, e.g. [R003, R012]. Cite at most 4 IDs per point.
+- Each review starts with its ID in square brackets. Support every claim about customers by citing the IDs of reviews that show it, copied EXACTLY as they appear in the data (same letters and digits), in square brackets separated by commas. Cite at most 4 IDs per point. Never cite an ID that is not in the supplied reviews.
 - Treat a point raised in only one review as isolated, and say so. Only call something recurring or common if two or more reviews show it.
 - When you mention counts or percentages, take them from the supplied statistics, not from your own counting.
 - Reviews may be written in English, Hindi or Hinglish; understand them all and write your answer in English.
@@ -99,9 +107,24 @@ def get_api_key() -> str | None:
     return key or None
 
 
+def get_provider() -> str:
+    """Return "gemini" or "anthropic", from AI_PROVIDER or guessed from the key format."""
+    configured = os.getenv("AI_PROVIDER", "").strip().lower()
+    if configured in PROVIDERS:
+        return configured
+    key = get_api_key() or ""
+    return "anthropic" if key.startswith("sk-ant-") else "gemini" if key else "anthropic"
+
+
 def get_model_name() -> str:
-    """Return the configured model name."""
-    return os.getenv("AI_MODEL", "").strip() or DEFAULT_MODEL
+    """Return the configured model name (AI_MODEL, or the provider's default)."""
+    return os.getenv("AI_MODEL", "").strip() or DEFAULT_MODELS[get_provider()]
+
+
+def provider_label() -> str:
+    """Human-readable provider and model, e.g. "Gemini · gemini-flash-latest"."""
+    name = {"gemini": "Gemini", "anthropic": "Claude"}[get_provider()]
+    return f"{name} · {get_model_name()}"
 
 
 def is_ai_configured() -> bool:
@@ -152,11 +175,81 @@ def extract_cited_ids(text: str, valid_ids: set[str]) -> tuple[list[str], list[s
 
 
 def _call_model(system: str, prompt: str, max_tokens: int = 2000) -> str:
-    """Send one request to the AI model and return its text, raising AIServiceError on failure."""
+    """Send one request to the configured AI provider and return its text.
+
+    Raises AIServiceError with a friendly message on any failure.
+    """
     api_key = get_api_key()
     if not api_key:
         raise AIServiceError(NOT_CONFIGURED_MESSAGE)
+    if get_provider() == "gemini":
+        return _call_gemini(api_key, system, prompt, max_tokens)
+    return _call_anthropic(api_key, system, prompt, max_tokens)
 
+
+def _call_gemini(api_key: str, system: str, prompt: str, max_tokens: int) -> str:
+    """Google Gemini via the official google-genai SDK."""
+    try:
+        import httpx
+        from google import genai
+        from google.genai import errors, types
+    except ImportError as exc:
+        raise AIServiceError(
+            "The 'google-genai' package is not installed. Run: pip install -r requirements.txt"
+        ) from exc
+
+    model = get_model_name()
+    client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=120_000))
+    config = types.GenerateContentConfig(
+        system_instruction=system,
+        # Newer Gemini models "think" before answering and that uses output tokens too,
+        # so allow generous room; the prompts themselves ask for concise answers.
+        max_output_tokens=max(max_tokens * 4, 8192),
+        temperature=0.2,
+    )
+    try:
+        try:
+            response = client.models.generate_content(model=model, contents=prompt, config=config)
+        except errors.APIError as exc:
+            # Free-tier models are often briefly overloaded (503) or rate-limited (429).
+            # Retry once on the lighter model, which has its own capacity.
+            if exc.code not in (429, 503) or model == GEMINI_FALLBACK_MODEL:
+                raise
+            model = GEMINI_FALLBACK_MODEL
+            response = client.models.generate_content(model=model, contents=prompt, config=config)
+    except errors.ClientError as exc:
+        if exc.code == 429:
+            raise AIServiceError(
+                "The Gemini free-tier limit was reached. Wait a minute and try again."
+            ) from exc
+        if exc.code == 404:
+            raise AIServiceError(f"AI model '{model}' was not found. Check the value of AI_MODEL.") from exc
+        if exc.code in (401, 403) or "API_KEY" in str(exc.message or ""):
+            raise AIServiceError("The AI API key was rejected. Check the value of AI_API_KEY.") from exc
+        raise AIServiceError(f"The AI service rejected the request: {exc.message}") from exc
+    except errors.ServerError as exc:
+        raise AIServiceError(
+            f"The AI service returned an error (HTTP {exc.code}). Please try again later."
+        ) from exc
+    except httpx.HTTPError as exc:
+        raise AIServiceError(
+            "Could not reach the AI service. Check your internet connection and try again."
+        ) from exc
+
+    candidate = (response.candidates or [None])[0]
+    finish = str(getattr(candidate, "finish_reason", "") or "")
+    if any(reason in finish for reason in ("SAFETY", "PROHIBITED", "BLOCKLIST", "SPII")):
+        raise AIServiceError("The AI model declined to process this request.")
+    text = (response.text or "").strip()
+    if not text:
+        raise AIServiceError("The AI model returned an empty response. Please try again.")
+    if "MAX_TOKENS" in finish:
+        text += "\n\n_(Response was cut short because it reached the length limit.)_"
+    return text
+
+
+def _call_anthropic(api_key: str, system: str, prompt: str, max_tokens: int) -> str:
+    """Anthropic Claude via the official anthropic SDK."""
     try:
         import anthropic
     except ImportError as exc:
@@ -214,7 +307,9 @@ def _analyse(reviews: pd.DataFrame, subject: str, task: str, stats: str = "", em
     total = len(reviews)
     selected = reviews.sort_values("review_date").tail(MAX_REVIEWS_FOR_AI)
     chunks = chunk_lines([format_review_line(row) for _, row in selected.iterrows()])
-    header = f"Product(s): {subject}\nNumber of reviews in this set: {len(selected)}\n"
+    example_ids = ", ".join(selected["review_id"].astype(str).head(2))
+    header = (f"Product(s): {subject}\nNumber of reviews in this set: {len(selected)}\n"
+              f"Review IDs in this data look like this: [{example_ids}]. Cite them exactly in this format.\n")
     if stats:
         header += f"\n<statistics>\n{stats}\n</statistics>\n"
 
@@ -225,7 +320,8 @@ def _analyse(reviews: pd.DataFrame, subject: str, task: str, stats: str = "", em
         notes = []
         for index, chunk in enumerate(chunks, start=1):
             chunk_prompt = (
-                f"Product(s): {subject}\nThis is batch {index} of {len(chunks)}.\n\n<reviews>\n"
+                f"Product(s): {subject}\nThis is batch {index} of {len(chunks)}.\n"
+                f"Review IDs look like this: [{example_ids}]. Cite them exactly.\n\n<reviews>\n"
                 + "\n".join(chunk)
                 + "\n</reviews>\n\nWrite brief bullet-point notes on the praise and complaints in this "
                 "batch. Cite review IDs for every point. Do not add anything not stated in the reviews."
@@ -241,7 +337,7 @@ def _analyse(reviews: pd.DataFrame, subject: str, task: str, stats: str = "", em
 
     cited_ids, unknown_ids = extract_cited_ids(text, set(selected["review_id"].astype(str)))
     return {
-        "text": text, "summary": text, "model": get_model_name(), "reviews_used": len(selected),
+        "text": text, "summary": text, "model": provider_label(), "reviews_used": len(selected),
         "reviews_total": total, "chunks": len(chunks), "cited_ids": cited_ids, "unknown_ids": unknown_ids,
     }
 

@@ -9,6 +9,8 @@ scikit-learn>=1.4
 vaderSentiment>=3.3.2
 # AI features (Claude via the Anthropic API)
 anthropic>=1.0.0
+# AI provider option: Google Gemini (free tier available)
+google-genai>=1.0
 # Loads AI_API_KEY / AI_MODEL from a local .env file
 python-dotenv>=1.0.0
 # Automated tests

@@ -76,7 +76,7 @@ def sidebar() -> tuple[dict, str, tuple]:
 
         st.divider()
         if ai_service.is_ai_configured():
-            st.success(f"AI on · `{ai_service.get_model_name()}`", icon="✨")
+            st.success(f"AI on · {ai_service.provider_label()}", icon="✨")
         else:
             st.warning("AI off: set AI_API_KEY to enable summaries and Q&A. All other analysis works.", icon="🔑")
         st.caption("Sentiment: VADER + Hinglish/Hindi lexicon · Themes: keyword rules · Risk: text similarity & patterns")

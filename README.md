@@ -17,15 +17,15 @@ It supports **English, Hindi and Hinglish** reviews.
 | 1 | CSV upload, validation and cleaning | IMPLEMENTED | `data_loader.py` |
 | 2 | Sentiment analysis | IMPLEMENTED | VADER, extended for review vocabulary and Hinglish/Hindi |
 | 3 | Complaint and praise theme detection | IMPLEMENTED | Clause-level keyword matching (`themes.py`) |
-| 4 | AI review summary | IMPLEMENTED | Claude (`ai_service.py`) |
-| 5 | Positive and negative feedback summaries | IMPLEMENTED | Claude, run on the VADER-positive and VADER-negative groups |
+| 4 | AI review summary | IMPLEMENTED | Gemini or Claude (`ai_service.py`) |
+| 5 | Positive and negative feedback summaries | IMPLEMENTED | AI, run on the VADER-positive and VADER-negative groups |
 | 6 | Key customer insights and recommended actions | IMPLEMENTED | Computed from the data, plus optional AI insights |
 | 7 | Issue priority ranking | IMPLEMENTED | Transparent 0–100 score (`insights.py`) |
 | 8 | Evidence-backed insights | IMPLEMENTED | Real review quotes; AI-cited IDs are checked against the data |
 | 9 | Trend analysis over time | IMPLEMENTED | `trends.py` |
 | 10 | Review spike alerts | IMPLEMENTED | Recent window vs baseline, with minimum-data rules |
 | 11 | Fake-review risk indicators | IMPLEMENTED | Explainable signals (`fake_risk.py`) |
-| 12 | Ask Your Reviews (Q&A) | IMPLEMENTED | TF-IDF retrieval plus grounded Claude answer |
+| 12 | Ask Your Reviews (Q&A) | IMPLEMENTED | TF-IDF retrieval plus grounded AI answer |
 | 13 | Hindi / Hinglish support | IMPLEMENTED (limited accuracy, see Limitations) | `sentiment.py`, `themes.py` |
 
 All AI features are optional. **AI output quality depends on the model. The AI features were verified with mocked responses in the automated tests.** Everything that doesn't use AI works with no API key.
@@ -61,7 +61,7 @@ Pages are reached from the navigation bar at the top, grouped as Dashboard, AI a
                               │
      ┌──────────────┬─────────┼───────────────┬────────────────┐
  insights.py     trends.py   fake_risk.py   retrieval.py     ai_service.py
- priority,       trends,     risk score +   relevant reviews  Claude: summaries,
+ priority,       trends,     risk score +   relevant reviews  Gemini/Claude: summaries,
  key insights,   spike       reasons        for questions     insights, Q&A
  evidence        alerts                                       (optional)
      └──────────────┴─────────┼───────────────┴────────────────┘
@@ -117,18 +117,28 @@ Requirements: Python 3.10 or newer. Internet access is needed only to install pa
 
 ## AI configuration (optional)
 
+ProductPulse AI supports two AI providers: **Google Gemini** (has a free tier) and **Anthropic Claude**.
+
 1. Copy `.env.example` to `.env`. `.env` is in `.gitignore` and must never be committed.
-2. Add your Anthropic API key (from https://console.anthropic.com/):
+2. Add your key. For example, with a free Gemini key from https://aistudio.google.com/apikey:
 
 ```text
+AI_PROVIDER=gemini
 AI_API_KEY=your_api_key_here
-AI_MODEL=claude-haiku-4-5
 ```
 
 | Variable | Required | Default | Meaning |
 | --- | --- | --- | --- |
-| `AI_API_KEY` | For AI features | (none) | Anthropic API key. It is never shown in the UI or logs |
-| `AI_MODEL` | No | `claude-haiku-4-5` | Claude model ID. Haiku is fast and low-cost. Use `claude-opus-5-5` for the highest-quality analysis |
+| `AI_API_KEY` | For AI features | (none) | Gemini or Anthropic API key. It is never shown in the UI or logs |
+| `AI_PROVIDER` | No | guessed from the key | `gemini` or `anthropic`. If not set, keys starting with `sk-ant-` use Claude and any other key uses Gemini |
+| `AI_MODEL` | No | `gemini-flash-latest` / `claude-haiku-4-5` | Model ID. `gemini-flash-latest` always points to Google's current Flash model. For Claude, `claude-opus-5-5` gives the highest-quality analysis |
+
+**Gemini free tier:** models are sometimes briefly overloaded (HTTP 503) or rate-limited (HTTP 429). When that happens, the app automatically retries once with `gemini-flash-lite-latest`. If that also fails, it shows a friendly "try again" message.
+
+**Verified with a real Gemini key:**
+- The overall, positive and negative summaries, the insights and Q&A were all generated successfully.
+- Every cited review ID was valid.
+- "Are delivery complaints increasing?" was answered correctly ("no": 9.3% recently vs 13.2% earlier) using the computed statistics.
 
 Shell variables work too, for example `$env:AI_API_KEY="..."`.
 
@@ -211,7 +221,7 @@ Each level needs both a high enough score **and** enough evidence, so one compla
 Each insight lists the IDs of the real reviews that support it. **Evidence** for an issue means the actual review quotes with the strongest relevant clauses, never invented text.
 
 ### AI summaries, insights and grounding
-`ai_service.py` sends Claude only real reviews, each tagged with its ID, plus statistics computed by the app. The model is instructed to:
+`ai_service.py` sends the AI model only real reviews, each tagged with its ID, plus statistics computed by the app. The model is instructed to:
 - use only the supplied reviews and statistics, and never invent facts
 - cite review IDs for every claim
 - call a point "recurring" only if two or more reviews support it, and "isolated" otherwise
@@ -299,7 +309,7 @@ python scripts/generate_demo_data.py
 
    ```toml
    AI_API_KEY = "your_api_key_here"
-   AI_MODEL = "claude-haiku-4-5"
+   AI_PROVIDER = "gemini"
    ```
 
    Streamlit Community Cloud exposes top-level secrets as environment variables, and `ai_service.py` reads environment variables, so no code changes are needed.

@@ -113,6 +113,7 @@ def test_api_errors_become_friendly(monkeypatch, sample_reviews):
     import httpx2
 
     monkeypatch.setenv("AI_API_KEY", "test-key-not-real")
+    monkeypatch.setenv("AI_PROVIDER", "anthropic")
     request = httpx2.Request("POST", "https://api.anthropic.com/v1/messages")
 
     def raise_connection_error(self, **kwargs):
@@ -120,4 +121,70 @@ def test_api_errors_become_friendly(monkeypatch, sample_reviews):
 
     monkeypatch.setattr(anthropic.resources.Messages, "create", raise_connection_error)
     with pytest.raises(ai_service.AIServiceError, match="Could not reach"):
+        ai_service.generate_review_summary(sample_reviews)
+
+
+# ---------- provider selection and Gemini ----------
+
+def test_provider_is_detected_from_key_or_setting(monkeypatch):
+    monkeypatch.setenv("AI_API_KEY", "sk-ant-not-real")
+    assert ai_service.get_provider() == "anthropic"
+    assert ai_service.get_model_name() == "claude-haiku-4-5"
+    monkeypatch.setenv("AI_API_KEY", "AIza-not-real")
+    assert ai_service.get_provider() == "gemini"
+    assert ai_service.get_model_name() == "gemini-flash-latest"
+    monkeypatch.setenv("AI_PROVIDER", "anthropic")
+    assert ai_service.get_provider() == "anthropic"
+    assert "Claude" in ai_service.provider_label()
+
+
+class _FakeResponse:
+    def __init__(self, text):
+        self.text = text
+        self.candidates = []
+
+
+def _fake_gemini(monkeypatch, behaviour):
+    """Patch the google-genai client so generate_content runs `behaviour(model)`."""
+    from google import genai
+
+    calls = []
+
+    class FakeModels:
+        def generate_content(self, model, contents, config):
+            calls.append(model)
+            return behaviour(model)
+
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            self.models = FakeModels()
+
+    monkeypatch.setattr(genai, "Client", FakeClient)
+    monkeypatch.setenv("AI_API_KEY", "AIza-not-real")
+    monkeypatch.setenv("AI_PROVIDER", "gemini")
+    return calls
+
+
+def test_gemini_overload_falls_back_to_lite_model(monkeypatch, sample_reviews):
+    from google.genai import errors
+
+    def behaviour(model):
+        if model == "gemini-flash-latest":
+            raise errors.ServerError(503, {"error": {"code": 503, "message": "high demand", "status": "UNAVAILABLE"}})
+        return _FakeResponse("### Overall Summary\nFine. [R001]")
+
+    calls = _fake_gemini(monkeypatch, behaviour)
+    result = ai_service.generate_review_summary(sample_reviews)
+    assert calls == ["gemini-flash-latest", ai_service.GEMINI_FALLBACK_MODEL]
+    assert result["cited_ids"] == ["R001"]
+
+
+def test_gemini_rate_limit_gives_friendly_error(monkeypatch, sample_reviews):
+    from google.genai import errors
+
+    def behaviour(model):
+        raise errors.ClientError(429, {"error": {"code": 429, "message": "quota", "status": "RESOURCE_EXHAUSTED"}})
+
+    _fake_gemini(monkeypatch, behaviour)
+    with pytest.raises(ai_service.AIServiceError, match="free-tier limit"):
         ai_service.generate_review_summary(sample_reviews)

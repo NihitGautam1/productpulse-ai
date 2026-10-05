@@ -37,4 +37,5 @@ def demo_mentions(demo_reviews) -> pd.DataFrame:
 @pytest.fixture(autouse=True)
 def no_real_api_key(monkeypatch):
     """Make sure no real key leaks into tests."""
-    monkeypatch.delenv("AI_API_KEY", raising=False)
+    for name in ("AI_API_KEY", "AI_PROVIDER", "AI_MODEL"):  # ignore any local .env settings
+        monkeypatch.delenv(name, raising=False)
