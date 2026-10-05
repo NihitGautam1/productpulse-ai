@@ -1,10 +1,13 @@
 # Dashboard and data handling
 streamlit>=1.40.0
 pandas>=2.0.0
-matplotlib>=3.7.0
+# Interactive charts
+plotly>=5.20
+# TF-IDF text similarity: duplicate-review detection and Ask Your Reviews retrieval
+scikit-learn>=1.4
 # Local sentiment analysis (no API key needed)
 vaderSentiment>=3.3.2
-# AI summarisation (Claude via the Anthropic API)
+# AI features (Claude via the Anthropic API)
 anthropic>=1.0.0
 # Loads AI_API_KEY / AI_MODEL from a local .env file
 python-dotenv>=1.0.0
