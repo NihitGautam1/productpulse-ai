@@ -1,0 +1,12 @@
+# Dashboard and data handling
+streamlit>=1.40.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+# Local sentiment analysis (no API key needed)
+vaderSentiment>=3.3.2
+# AI summarisation (Claude via the Anthropic API)
+anthropic>=1.0.0
+# Loads AI_API_KEY / AI_MODEL from a local .env file
+python-dotenv>=1.0.0
+# Automated tests
+pytest>=8.0.0
