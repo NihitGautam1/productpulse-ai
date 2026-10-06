@@ -2,14 +2,14 @@ review_id,product_name,rating,review_text,review_date
 D001,Nimbus ANC Headphones,2,Bluetooth baar baar disconnect ho jata hai. But ANC works brilliantly on long flights.,2026-04-01
 D002,Nimbus ANC Headphones,3,"Worth every rupee at the sale price. However, customer support did not respond to my emails.",2026-04-01
 D003,Nimbus ANC Headphones,4,"Sound quality is excellent with deep, clean bass. Battery lasts all day with ANC switched on. Great value for the price.",2026-04-01
-D004,Nimbus ANC Headphones,4,Battery easily lasts the whole week of commuting. Noise cancellation blocks out the metro noise completely.,2026-04-02
-D005,AeroBrew Coffee Maker,3,"Looks great on the counter and is easy to clean. But water tank is too small, I refill constantly. But good value for daily use.",2026-04-02
-D006,Nimbus ANC Headphones,4,"Great value for the price. However, the left earcup randomly loses connection.",2026-04-03
+D004,Nimbus ANC Headphones,4,Battery easily lasts the whole week of commuting. Noise cancellation blocks out the metro noise completely. Please add a custom EQ in the app.,2026-04-02
+D005,AeroBrew Coffee Maker,3,"Looks great on the counter and is easy to clean. But water tank is too small, I refill constantly. But good value for daily use. It should have a brew strength setting.",2026-04-02
+D006,Nimbus ANC Headphones,4,"Great value for the price. However, the left earcup randomly loses connection. Please add a custom EQ in the app.",2026-04-03
 D007,Nimbus ANC Headphones,5,The ear cushions are soft and light on the head. Delivery was quick and the box was well packed.,2026-04-03
-D008,Nimbus ANC Headphones,5,Delivery was quick and the box was well packed.,2026-04-04
-D009,Nimbus ANC Headphones,5,Worth every rupee at the sale price.,2026-04-05
+D008,Nimbus ANC Headphones,5,Delivery was quick and the box was well packed. Please add an equaliser in the app.,2026-04-04
+D009,Nimbus ANC Headphones,5,Worth every rupee at the sale price. I wish it had multipoint so it could connect to two devices.,2026-04-05
 D010,Nimbus ANC Headphones,3,"Ear cups get hot and uncomfortable after an hour. However, sound quality ekdum mast hai.",2026-04-05
-D011,Nimbus ANC Headphones,5,"Comfort bhi badhiya hai, ghanto tak pehen sakte ho. Pairs instantly with my phone and laptop.",2026-04-07
+D011,Nimbus ANC Headphones,5,"Comfort bhi badhiya hai, ghanto tak pehen sakte ho. Pairs instantly with my phone and laptop. Please add a custom EQ in the app.",2026-04-07
 D012,Nimbus ANC Headphones,3,"Delivery was late by a week. However, pairs instantly with my phone and laptop.",2026-04-08
 D013,AeroBrew Coffee Maker,5,Shipping was fast and the packaging was sturdy. Looks great on the counter and is easy to clean.,2026-04-08
 D014,Nimbus ANC Headphones,1,Ear cups get hot and uncomfortable after an hour.,2026-04-09
@@ -17,17 +17,17 @@ D015,PulseFit Smartwatch,1,Battery barely lasts a day with GPS on.,2026-04-09
 D016,Nimbus ANC Headphones,5,Battery lasts all day with ANC switched on. Very comfortable even after four hours of use.,2026-04-10
 D017,AeroBrew Coffee Maker,5,Coffee ka taste ekdum cafe jaisa hai. Shipping was fast and the packaging was sturdy.,2026-04-10
 D018,Nimbus ANC Headphones,2,Overpriced for what you get. But delivery was quick and the box was well packed.,2026-04-11
-D019,AeroBrew Coffee Maker,3,"Very noisy while brewing. However, shipping was fast and the packaging was sturdy.",2026-04-11
+D019,AeroBrew Coffee Maker,3,"Very noisy while brewing. However, shipping was fast and the packaging was sturdy. Wish it had a timer so coffee is ready in the morning.",2026-04-11
 D020,Nimbus ANC Headphones,2,"Great value for the price. But battery drains within five hours. However, bluetooth connection is rock solid across the room.",2026-04-12
 D021,AeroBrew Coffee Maker,5,Shipping was fast and the packaging was sturdy.,2026-04-13
-D022,PulseFit Smartwatch,5,Watch ka display bahut bright aur clear hai.,2026-04-13
+D022,PulseFit Smartwatch,5,Watch ka display bahut bright aur clear hai. Would be nice if I could reply to messages from the watch.,2026-04-13
 D023,PulseFit Smartwatch,1,Customer service took three weeks to reply. Stopped charging after two months.,2026-04-15
 D024,AeroBrew Coffee Maker,5,Good value for daily use.,2026-04-15
-D025,PulseFit Smartwatch,2,Stopped charging after two months. Delivery was delayed twice.,2026-04-16
+D025,PulseFit Smartwatch,2,Stopped charging after two months. Delivery was delayed twice. Spotify control hona chahiye.,2026-04-16
 D026,PulseFit Smartwatch,3,"Step counting matches my phone almost exactly. However, delivery was delayed twice.",2026-04-17
 D027,PulseFit Smartwatch,2,"Charges fully in under an hour. However, delivery was delayed twice.",2026-04-17
 D028,AeroBrew Coffee Maker,2,Arrived late and the box was crushed. But good value for daily use.,2026-04-17
-D029,AeroBrew Coffee Maker,4,Brews fast and the coffee tastes rich. Shipping was fast and the packaging was sturdy.,2026-04-19
+D029,AeroBrew Coffee Maker,4,Brews fast and the coffee tastes rich. Shipping was fast and the packaging was sturdy. Wish it had a timer so coffee is ready in the morning.,2026-04-19
 D030,Nimbus ANC Headphones,3,"Battery life is much shorter than advertised. However, bass bahut accha hai, gaane sunne mein maza aata hai. Worth every rupee at the sale price.",2026-04-19
 D031,Nimbus ANC Headphones,3,Ear cups get hot and uncomfortable after an hour. But battery lasts all day with ANC switched on.,2026-04-19
 D032,Nimbus ANC Headphones,5,"Comfort bhi badhiya hai, ghanto tak pehen sakte ho. Worth every rupee at the sale price. Vocals are crisp and the soundstage feels wide.",2026-04-21
@@ -38,19 +38,19 @@ D036,Nimbus ANC Headphones,3,"Delivery late thi. However, battery lasts all day 
 D037,Nimbus ANC Headphones,5,Battery easily lasts the whole week of commuting. Very comfortable even after four hours of use.,2026-04-23
 D038,Nimbus ANC Headphones,5,Battery backup kaafi accha hai. Worth every rupee at the sale price.,2026-04-23
 D039,Nimbus ANC Headphones,4,Great value for the price.,2026-04-23
-D040,Nimbus ANC Headphones,4,"Battery drains within five hours. However, worth every rupee at the sale price.",2026-04-24
+D040,Nimbus ANC Headphones,4,"Battery drains within five hours. However, worth every rupee at the sale price. Wish it could connect to my phone and laptop at the same time.",2026-04-24
 D041,Nimbus ANC Headphones,5,Worth every rupee at the sale price. Pairs instantly with my phone and laptop.,2026-04-25
 D042,Nimbus ANC Headphones,3,"Battery life is much shorter than advertised. However, ANC works brilliantly on long flights.",2026-04-25
 D043,Nimbus ANC Headphones,5,Delivery was quick and the box was well packed. Worth every rupee at the sale price.,2026-04-26
 D044,AeroBrew Coffee Maker,4,The warming plate keeps coffee hot for an hour. Shipping was fast and the packaging was sturdy.,2026-04-26
 D045,PulseFit Smartwatch,4,Accha product hai.,2026-04-27
-D046,AeroBrew Coffee Maker,4,Looks great on the counter and is easy to clean.,2026-04-27
+D046,AeroBrew Coffee Maker,4,Looks great on the counter and is easy to clean. Please add a delay start timer.,2026-04-27
 D047,Nimbus ANC Headphones,2,The connection drops when I move away from the phone.,2026-04-28
 D048,PulseFit Smartwatch,4,Watch ka display bahut bright aur clear hai. The strap is soft and comfortable to sleep in.,2026-04-28
 D049,Nimbus ANC Headphones,3,Battery backup kaafi accha hai. But customer care ne koi jawab nahi diya.,2026-04-30
 D050,PulseFit Smartwatch,5,Excellent value compared to bigger brands. Charges fully in under an hour.,2026-04-30
 D051,Nimbus ANC Headphones,4,"Overpriced for what you get. However, battery backup kaafi accha hai. Bluetooth connection is rock solid across the room.",2026-05-01
-D052,AeroBrew Coffee Maker,4,"Arrived late and the box was crushed. However, the warming plate keeps coffee hot for an hour.",2026-05-01
+D052,AeroBrew Coffee Maker,4,"Arrived late and the box was crushed. However, the warming plate keeps coffee hot for an hour. It should have a brew strength setting.",2026-05-01
 D053,Nimbus ANC Headphones,1,Package arrived damaged and dented.,2026-05-01
 D054,PulseFit Smartwatch,5,Heart rate readings look reliable during runs.,2026-05-02
 D055,PulseFit Smartwatch,3,"Excellent value compared to bigger brands. However, the band caused skin irritation.",2026-05-02
@@ -62,14 +62,14 @@ D060,Nimbus ANC Headphones,4,"Comfort bhi badhiya hai, ghanto tak pehen sakte ho
 D061,Nimbus ANC Headphones,5,Delivery was quick and the box was well packed. Very comfortable even after four hours of use.,2026-05-08
 D062,Nimbus ANC Headphones,5,Bluetooth connection is rock solid across the room.,2026-05-08
 D063,PulseFit Smartwatch,4,Excellent value compared to bigger brands. The strap is soft and comfortable to sleep in.,2026-05-09
-D064,Nimbus ANC Headphones,4,Bluetooth connection is rock solid across the room. Battery lasts all day with ANC switched on.,2026-05-10
+D064,Nimbus ANC Headphones,4,Bluetooth connection is rock solid across the room. Battery lasts all day with ANC switched on. Would be great if it came with a hard carrying case.,2026-05-10
 D065,PulseFit Smartwatch,2,Strap material feels cheap and sweaty.,2026-05-11
 D066,AeroBrew Coffee Maker,4,"Arrived late and the box was crushed. However, looks great on the counter and is easy to clean.",2026-05-14
 D067,Nimbus ANC Headphones,3,Worth every rupee at the sale price. Battery backup kaafi accha hai. But the left earcup randomly loses connection.,2026-05-15
 D068,AeroBrew Coffee Maker,5,Good value for daily use. The warming plate keeps coffee hot for an hour.,2026-05-15
 D069,PulseFit Smartwatch,4,Excellent value compared to bigger brands. Battery lasts five days on a single charge.,2026-05-16
 D070,PulseFit Smartwatch,5,The strap is soft and comfortable to sleep in.,2026-05-16
-D071,Nimbus ANC Headphones,5,"Comfort bhi badhiya hai, ghanto tak pehen sakte ho. Pairs instantly with my phone and laptop.",2026-05-17
+D071,Nimbus ANC Headphones,5,"Comfort bhi badhiya hai, ghanto tak pehen sakte ho. Pairs instantly with my phone and laptop. Please add a custom EQ in the app.",2026-05-17
 D072,AeroBrew Coffee Maker,4,Brews fast and the coffee tastes rich. Good value for daily use.,2026-05-18
 D073,Nimbus ANC Headphones,3,"Pairs instantly with my phone and laptop. However, ek mahine mein hi kharab ho gaya.",2026-05-18
 D074,Nimbus ANC Headphones,4,Battery backup kaafi accha hai. Pairs instantly with my phone and laptop. Sound quality ekdum mast hai.,2026-05-19
@@ -93,13 +93,13 @@ D091,PulseFit Smartwatch,2,Customer service took three weeks to reply. But excel
 D092,Nimbus ANC Headphones,2,Overpriced for what you get.,2026-05-30
 D093,PulseFit Smartwatch,4,Notifications are clear and the app is simple to use.,2026-05-30
 D094,PulseFit Smartwatch,4,Value for money.,2026-05-31
-D095,PulseFit Smartwatch,4,Excellent value compared to bigger brands. Watch ka display bahut bright aur clear hai. But customer service took three weeks to reply.,2026-06-01
+D095,PulseFit Smartwatch,4,Excellent value compared to bigger brands. Watch ka display bahut bright aur clear hai. But customer service took three weeks to reply. Wish it had offline maps for running.,2026-06-01
 D096,AeroBrew Coffee Maker,3,Brews fast and the coffee tastes rich. But machine stopped working after a month.,2026-06-03
 D097,PulseFit Smartwatch,4,Notifications are clear and the app is simple to use. Excellent value compared to bigger brands.,2026-06-03
 D098,Nimbus ANC Headphones,5,Bluetooth connection is rock solid across the room. Delivery was quick and the box was well packed.,2026-06-04
 D099,PulseFit Smartwatch,1,Customer service took three weeks to reply.,2026-06-04
 D100,Nimbus ANC Headphones,1,Delivery was late by a week. Clamping force is too tight for long sessions.,2026-06-04
-D101,Nimbus ANC Headphones,5,Battery easily lasts the whole week of commuting. ANC works brilliantly on long flights.,2026-06-05
+D101,Nimbus ANC Headphones,5,Battery easily lasts the whole week of commuting. ANC works brilliantly on long flights. Please add an equaliser in the app.,2026-06-05
 D102,PulseFit Smartwatch,3,Heart rate readings look reliable during runs. But battery barely lasts a day with GPS on.,2026-06-06
 D103,Nimbus ANC Headphones,5,Vocals are crisp and the soundstage feels wide. Bluetooth connection is rock solid across the room.,2026-06-06
 D104,Nimbus ANC Headphones,4,Battery backup kaafi accha hai.,2026-06-06
@@ -120,13 +120,13 @@ D118,Nimbus ANC Headphones,5,"Worth every rupee at the sale price. Sound quality
 D119,AeroBrew Coffee Maker,2,"The warming plate keeps coffee hot for an hour. But the carafe cracked after two weeks. However, shipping was fast and the packaging was sturdy.",2026-06-17
 D120,PulseFit Smartwatch,2,The band caused skin irritation.,2026-06-18
 D121,Nimbus ANC Headphones,5,"The ear cushions are soft and light on the head. Bass bahut accha hai, gaane sunne mein maza aata hai.",2026-06-18
-D122,Nimbus ANC Headphones,4,Battery easily lasts the whole week of commuting.,2026-06-20
-D123,Nimbus ANC Headphones,4,ANC works brilliantly on long flights.,2026-06-21
+D122,Nimbus ANC Headphones,4,Battery easily lasts the whole week of commuting. Please add a custom EQ in the app.,2026-06-20
+D123,Nimbus ANC Headphones,4,ANC works brilliantly on long flights. I wish it had multipoint so it could connect to two devices.,2026-06-21
 D124,Nimbus ANC Headphones,4,Delivery was quick and the box was well packed. Battery backup kaafi accha hai.,2026-06-21
 D125,Nimbus ANC Headphones,1,The left earcup randomly loses connection.,2026-06-22
 D126,Nimbus ANC Headphones,4,Bluetooth connection is rock solid across the room. Great value for the price.,2026-06-22
 D127,Nimbus ANC Headphones,2,Package arrived damaged and dented. Customer support did not respond to my emails.,2026-06-22
-D128,PulseFit Smartwatch,3,Battery barely lasts a day with GPS on. But excellent value compared to bigger brands.,2026-06-23
+D128,PulseFit Smartwatch,3,Battery barely lasts a day with GPS on. But excellent value compared to bigger brands. Wish it had offline maps for running.,2026-06-23
 D129,PulseFit Smartwatch,3,"Delivery was delayed twice. However, excellent value compared to bigger brands.",2026-06-25
 D130,Nimbus ANC Headphones,4,"Bluetooth connection is rock solid across the room. Comfort bhi badhiya hai, ghanto tak pehen sakte ho.",2026-06-26
 D131,Nimbus ANC Headphones,3,"Comfort bhi badhiya hai, ghanto tak pehen sakte ho. But customer care ne koi jawab nahi diya.",2026-06-27
@@ -137,7 +137,7 @@ D135,Nimbus ANC Headphones,4,Pairs instantly with my phone and laptop. Delivery 
 D136,Nimbus ANC Headphones,4,The ear cushions are soft and light on the head. Worth every rupee at the sale price.,2026-07-05
 D137,PulseFit Smartwatch,2,Excellent value compared to bigger brands. Battery lasts five days on a single charge. But the band caused skin irritation.,2026-07-06
 D138,Nimbus ANC Headphones,3,Ek mahine mein hi kharab ho gaya. But very comfortable even after four hours of use. Worth every rupee at the sale price.,2026-07-06
-D139,Nimbus ANC Headphones,5,"Pairs instantly with my phone and laptop. Comfort bhi badhiya hai, ghanto tak pehen sakte ho. Worth every rupee at the sale price.",2026-07-07
+D139,Nimbus ANC Headphones,5,"Pairs instantly with my phone and laptop. Comfort bhi badhiya hai, ghanto tak pehen sakte ho. Worth every rupee at the sale price. I wish it had multipoint so it could connect to two devices.",2026-07-07
 D140,PulseFit Smartwatch,4,Good product.,2026-07-07
 D141,Nimbus ANC Headphones,3,Bluetooth connection is rock solid across the room. Very comfortable even after four hours of use. But build feels cheap and creaky.,2026-07-09
 D142,PulseFit Smartwatch,4,"Excellent value compared to bigger brands. However, strap material feels cheap and sweaty.",2026-07-09
@@ -151,7 +151,7 @@ D149,AeroBrew Coffee Maker,2,Good value for daily use. But very noisy while brew
 D150,Nimbus ANC Headphones,5,Worth every rupee at the sale price. Bluetooth connection is rock solid across the room.,2026-07-17
 D151,Nimbus ANC Headphones,3,Great value for the price. Bluetooth connection is rock solid across the room. But ear cups get hot and uncomfortable after an hour.,2026-07-17
 D152,Nimbus ANC Headphones,2,Customer support did not respond to my emails.,2026-07-18
-D153,AeroBrew Coffee Maker,5,The warming plate keeps coffee hot for an hour. Looks great on the counter and is easy to clean.,2026-07-19
+D153,AeroBrew Coffee Maker,5,The warming plate keeps coffee hot for an hour. Looks great on the counter and is easy to clean. Please add a delay start timer.,2026-07-19
 D154,AeroBrew Coffee Maker,2,Very noisy while brewing.,2026-07-19
 D155,Nimbus ANC Headphones,3,Battery backup kaafi accha hai. Pairs instantly with my phone and laptop. But build feels cheap and creaky.,2026-07-20
 D156,Nimbus ANC Headphones,4,Delivery was quick and the box was well packed. But bluetooth keeps disconnecting every few minutes.,2026-07-20
@@ -179,7 +179,7 @@ D177,Nimbus ANC Headphones,5,Noise cancellation blocks out the metro noise compl
 D178,PulseFit Smartwatch,5,The strap is soft and comfortable to sleep in. Sleep tracking is surprisingly accurate.,2026-08-03
 D179,Nimbus ANC Headphones,1,Clamping force is too tight for long sessions. Package arrived damaged and dented.,2026-08-06
 D180,Nimbus ANC Headphones,5,The ear cushions are soft and light on the head.,2026-08-06
-D181,Nimbus ANC Headphones,3,Customer support did not respond to my emails. But battery easily lasts the whole week of commuting.,2026-08-06
+D181,Nimbus ANC Headphones,3,Customer support did not respond to my emails. But battery easily lasts the whole week of commuting. I wish it had multipoint so it could connect to two devices.,2026-08-06
 D182,PulseFit Smartwatch,5,Charges fully in under an hour.,2026-08-07
 D183,Nimbus ANC Headphones,1,The headband cracked near the hinge.,2026-08-08
 D184,Nimbus ANC Headphones,5,Battery lasts all day with ANC switched on. Great value for the price.,2026-08-08
@@ -189,8 +189,8 @@ D187,PulseFit Smartwatch,4,"Heart rate readings look reliable during runs. Howev
 D188,Nimbus ANC Headphones,3,"Great value for the price. However, delivery late thi.",2026-08-10
 D189,PulseFit Smartwatch,3,"The strap is soft and comfortable to sleep in. Notifications are clear and the app is simple to use. However, battery barely lasts a day with GPS on.",2026-08-11
 D190,AeroBrew Coffee Maker,5,Coffee ka taste ekdum cafe jaisa hai. Good value for daily use.,2026-08-13
-D191,Nimbus ANC Headphones,4,"Worth every rupee at the sale price. However, ear cups get hot and uncomfortable after an hour.",2026-08-14
-D192,Nimbus ANC Headphones,2,"Package arrived damaged and dented. However, great value for the price.",2026-08-14
+D191,Nimbus ANC Headphones,4,"Worth every rupee at the sale price. However, ear cups get hot and uncomfortable after an hour. Would be great if it came with a hard carrying case.",2026-08-14
+D192,Nimbus ANC Headphones,2,"Package arrived damaged and dented. However, great value for the price. Please add an equaliser in the app.",2026-08-14
 D193,PulseFit Smartwatch,5,"Best smartwatch ever!!! Must buy, highly recommended!!!",2026-08-14
 D194,PulseFit Smartwatch,5,Best smartwatch ever!! Must buy. Highly recommended!!!,2026-08-14
 D195,PulseFit Smartwatch,5,BEST SMARTWATCH EVER!!! MUST BUY!!! HIGHLY RECOMMENDED!!!,2026-08-14
@@ -221,7 +221,7 @@ D219,Nimbus ANC Headphones,4,Pairs instantly with my phone and laptop. Great val
 D220,PulseFit Smartwatch,3,"The app keeps crashing after sync. However, excellent value compared to bigger brands. The strap is soft and comfortable to sleep in.",2026-08-31
 D221,Nimbus ANC Headphones,3,"Comfort bhi badhiya hai, ghanto tak pehen sakte ho. But the left earcup randomly loses connection.",2026-09-01
 D222,PulseFit Smartwatch,2,Battery barely lasts a day with GPS on. Heart rate readings jump around randomly.,2026-09-01
-D223,Nimbus ANC Headphones,3,"Ek mahine mein hi kharab ho gaya. The connection drops when I move away from the phone. However, battery backup kaafi accha hai.",2026-09-02
+D223,Nimbus ANC Headphones,3,"Ek mahine mein hi kharab ho gaya. The connection drops when I move away from the phone. However, battery backup kaafi accha hai. Would be great if it came with a hard carrying case.",2026-09-02
 D224,Nimbus ANC Headphones,3,Pairing fails again and again after the latest update. Customer care ne koi jawab nahi diya. But very comfortable even after four hours of use.,2026-09-03
 D225,PulseFit Smartwatch,2,"Notifications are clear and the app is simple to use. However, delivery was delayed twice. But excellent value compared to bigger brands.",2026-09-03
 D226,AeroBrew Coffee Maker,2,Customer service refused a return. Machine stopped working after a month. But shipping was fast and the packaging was sturdy.,2026-09-04
@@ -246,7 +246,7 @@ D244,Nimbus ANC Headphones,4,"Bluetooth keeps disconnecting every few minutes. B
 D245,Nimbus ANC Headphones,3,"Customer support did not respond to my emails. However, battery backup kaafi accha hai.",2026-09-11
 D246,Nimbus ANC Headphones,2,Clamping force is too tight for long sessions. Overpriced for what you get.,2026-09-11
 D247,PulseFit Smartwatch,1,The app keeps crashing after sync. Delivery was delayed twice.,2026-09-11
-D248,Nimbus ANC Headphones,1,Ear cups get hot and uncomfortable after an hour. Pairing fails again and again after the latest update.,2026-09-12
+D248,Nimbus ANC Headphones,1,Ear cups get hot and uncomfortable after an hour. Pairing fails again and again after the latest update. Please add an equaliser in the app.,2026-09-12
 D249,Nimbus ANC Headphones,4,Battery backup kaafi accha hai. But bluetooth baar baar disconnect ho jata hai.,2026-09-12
 D250,AeroBrew Coffee Maker,4,The warming plate keeps coffee hot for an hour.,2026-09-12
 D251,Nimbus ANC Headphones,1,Bluetooth baar baar disconnect ho jata hai. Customer support did not respond to my emails.,2026-09-13
@@ -254,12 +254,12 @@ D252,AeroBrew Coffee Maker,3,The warming plate keeps coffee hot for an hour. But
 D253,PulseFit Smartwatch,3,"Watch ka display bahut bright aur clear hai. However, delivery was delayed twice.",2026-09-14
 D254,Nimbus ANC Headphones,3,Battery easily lasts the whole week of commuting. But build feels cheap and creaky. But bluetooth connection is rock solid across the room.,2026-09-14
 D255,Nimbus ANC Headphones,2,"Pairs instantly with my phone and laptop. However, clamping force is too tight for long sessions.",2026-09-14
-D256,PulseFit Smartwatch,5,Excellent value compared to bigger brands. Battery lasts five days on a single charge. Step counting matches my phone almost exactly.,2026-09-14
+D256,PulseFit Smartwatch,5,Excellent value compared to bigger brands. Battery lasts five days on a single charge. Step counting matches my phone almost exactly. Spotify control hona chahiye.,2026-09-14
 D257,Nimbus ANC Headphones,2,"Delivery late thi. However, comfort bhi badhiya hai, ghanto tak pehen sakte ho.",2026-09-15
 D258,Nimbus ANC Headphones,4,"Pairs instantly with my phone and laptop. However, customer care ne koi jawab nahi diya. Ek mahine mein hi kharab ho gaya.",2026-09-16
 D259,AeroBrew Coffee Maker,3,"Water tank is too small, I refill constantly. But shipping was fast and the packaging was sturdy.",2026-09-16
 D260,Nimbus ANC Headphones,1,बैटरी बहुत जल्दी खत्म हो जाती है।,2026-09-16
-D261,Nimbus ANC Headphones,2,Ear cups get hot and uncomfortable after an hour. Overpriced for what you get.,2026-09-17
+D261,Nimbus ANC Headphones,2,Ear cups get hot and uncomfortable after an hour. Overpriced for what you get. I wish it had multipoint so it could connect to two devices.,2026-09-17
 D262,PulseFit Smartwatch,5,Notifications are clear and the app is simple to use. Excellent value compared to bigger brands. The strap is soft and comfortable to sleep in.,2026-09-17
 D263,Nimbus ANC Headphones,4,"The headband cracked near the hinge. But worth every rupee at the sale price. Comfort bhi badhiya hai, ghanto tak pehen sakte ho.",2026-09-18
 D264,Nimbus ANC Headphones,1,Bluetooth baar baar disconnect ho jata hai.,2026-09-19
@@ -285,7 +285,7 @@ D283,Nimbus ANC Headphones,4,"Sound quality is excellent with deep, clean bass. 
 D284,Nimbus ANC Headphones,1,Connection itna weak hai ki dusre kamre mein jaate hi cut ho jata hai. Overpriced for what you get.,2026-09-26
 D285,AeroBrew Coffee Maker,3,Customer service refused a return. But good value for daily use. Looks great on the counter and is easy to clean.,2026-09-27
 D286,Nimbus ANC Headphones,3,Battery easily lasts the whole week of commuting. But bluetooth baar baar disconnect ho jata hai.,2026-09-27
-D287,Nimbus ANC Headphones,3,"Noise cancellation blocks out the metro noise completely. However, bluetooth baar baar disconnect ho jata hai.",2026-09-28
+D287,Nimbus ANC Headphones,3,"Noise cancellation blocks out the metro noise completely. However, bluetooth baar baar disconnect ho jata hai. I wish it had multipoint so it could connect to two devices.",2026-09-28
 D288,PulseFit Smartwatch,2,The strap is soft and comfortable to sleep in. Sleep tracking is surprisingly accurate. But stopped charging after two months.,2026-09-28
 D289,Nimbus ANC Headphones,2,Pairing fails again and again after the latest update. Overpriced for what you get.,2026-09-28
 D290,Nimbus ANC Headphones,3,"आवाज़ की गुणवत्ता बहुत अच्छी है। However, the left earcup randomly loses connection.",2026-09-28

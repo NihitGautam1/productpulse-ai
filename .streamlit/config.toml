@@ -1,5 +1,5 @@
 [server]
-maxUploadSize = 50
+maxUploadSize = 500  # room for video files
 
 [browser]
 gatherUsageStats = false

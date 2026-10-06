@@ -12,6 +12,7 @@ from typing import IO
 import pandas as pd
 
 REQUIRED_COLUMNS = ["review_id", "product_name", "rating", "review_text", "review_date"]
+OPTIONAL_COLUMNS = ["source_file"]  # kept when present (which uploaded file a review came from)
 
 # Alternative column names we accept and rename to the standard schema.
 COLUMN_ALIASES = {
@@ -63,7 +64,8 @@ def validate_reviews(df: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
             f"Expected: {', '.join(REQUIRED_COLUMNS)}."
         )
 
-    df = df[REQUIRED_COLUMNS].dropna(how="all").copy()
+    extra = [col for col in OPTIONAL_COLUMNS if col in df.columns]
+    df = df[REQUIRED_COLUMNS + extra].dropna(how="all", subset=REQUIRED_COLUMNS).copy()
 
     for col in ("review_id", "product_name", "review_text"):
         df[col] = df[col].fillna("").astype(str).str.strip()

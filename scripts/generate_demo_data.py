@@ -149,6 +149,43 @@ SUSPICIOUS_BURST = [
 ]
 
 
+# Feature requests, appended to some reviews so the Feature Wishlist has something to find.
+# Several products have one request that comes up again and again.
+WISHES = {
+    "Nimbus ANC Headphones": [
+        "I wish it had multipoint so it could connect to two devices.",
+        "I wish it had multipoint so it could connect to two devices.",
+        "Wish it could connect to my phone and laptop at the same time.",
+        "Please add an equaliser in the app.",
+        "Please add a custom EQ in the app.",
+        "Would be great if it came with a hard carrying case.",
+        "Ek transparency mode hona chahiye tha.",
+    ],
+    "PulseFit Smartwatch": [
+        "Please add offline maps for runs.",
+        "Wish it had offline maps for running.",
+        "Would be nice if I could reply to messages from the watch.",
+        "Hope they add more watch faces.",
+        "Spotify control hona chahiye.",
+    ],
+    "AeroBrew Coffee Maker": [
+        "Wish it had a timer so coffee is ready in the morning.",
+        "Please add a delay start timer.",
+        "It should have a brew strength setting.",
+    ],
+}
+WISH_RATE = 0.12
+
+
+def add_wishes(rows: list[dict]) -> None:
+    """Append a feature request to some reviews. Uses its own random generator so the
+    rest of the dataset stays exactly the same as before requests were added."""
+    rng = random.Random(7)
+    for row in rows:
+        if rng.random() < WISH_RATE:
+            row["review_text"] += " " + rng.choice(WISHES[row["product_name"]])
+
+
 def sentence_key(text: str) -> frozenset:
     """Order-independent key so "A. B." and "B. A." count as the same review."""
     parts = text.replace("However, ", ". ").replace("But ", ". ").lower().split(".")
@@ -225,6 +262,7 @@ def generate() -> list[dict]:
             seen.add(key)
             rows.append({"product_name": product, "rating": rating, "review_text": text, "review_date": day})
         day += timedelta(days=1)
+    add_wishes(rows)
 
     # Burst of near-identical generic 5-star reviews posted on one day.
     for text in SUSPICIOUS_BURST:

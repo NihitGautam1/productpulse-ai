@@ -20,6 +20,8 @@ Levels need both a score AND enough evidence, so a single complaint is never "Cr
 
 from __future__ import annotations
 
+import re
+
 import pandas as pd
 
 from sentiment import sentiment_counts
@@ -183,6 +185,82 @@ def key_insights(df: pd.DataFrame, mentions: pd.DataFrame, priority: pd.DataFram
             "evidence": _ids(indic),
         })
     return insights
+
+
+def headline(df: pd.DataFrame, mentions: pd.DataFrame, priority: pd.DataFrame) -> str:
+    """One computed sentence for the top of the dashboard: the top praise and the top problem.
+
+    Marks the praised theme with **bold** and the problem theme with __underscores__ (shown in red).
+    """
+    total = len(df)
+    if not total:
+        return "No reviews match the current filters."
+    praise = mentions[mentions["polarity"] == "praise"].groupby("theme")["review_id"].nunique()
+    praise = praise[praise >= 2].sort_values(ascending=False)
+    loved = f"Customers love **{praise.index[0]}** ({int(praise.iloc[0])} reviews)" if len(praise) else ""
+    recurring = priority[priority["complaint_reviews"] >= 2] if not priority.empty else priority
+    if len(recurring):
+        top = recurring.iloc[0]
+        problem = f"__{top['theme']}__ is the top problem ({int(top['complaint_reviews'])} reviews, {top['level']} priority)"
+        if top["recent_rise"] >= 1:
+            problem += f" and it is rising: {top['recent_rate_pct']}% of recent reviews mention it"
+        return f"{loved}, but {problem}." if loved else f"{problem[0].upper()}{problem[1:]}."
+    counts = sentiment_counts(df)
+    mood = f"{counts['Positive'] / total:.0%} of reviews are positive and no recurring problem stands out"
+    return f"{loved}, and {mood}." if loved else f"{mood[0].upper()}{mood[1:]}."
+
+
+def fix_impact(df: pd.DataFrame, mentions: pd.DataFrame, priority: pd.DataFrame) -> pd.DataFrame:
+    """What the average rating could become if each issue were fixed.
+
+    For each issue, reviews complaining about it are assumed to rate like the reviews that do
+    not complain about it (never lower than they already rated). It is an optimistic estimate,
+    since a review may mention other problems too.
+    Columns: theme, level, affected, current_avg, projected_avg, gain.
+    """
+    columns = ["theme", "level", "affected", "current_avg", "projected_avg", "gain"]
+    if df.empty or priority.empty:
+        return pd.DataFrame(columns=columns)
+    current = float(df["rating"].mean())
+    rows = []
+    for issue in priority.itertuples():
+        ids = set(mentions.loc[(mentions["theme"] == issue.theme) & (mentions["polarity"] == "complaint"), "review_id"])
+        affected = df["review_id"].isin(ids)
+        if not affected.any() or affected.all():
+            continue
+        others = float(df.loc[~affected, "rating"].mean())
+        projected = df["rating"].where(~affected, df["rating"].clip(lower=others)).mean()
+        rows.append({"theme": issue.theme, "level": issue.level, "affected": int(affected.sum()),
+                     "current_avg": round(current, 2), "projected_avg": round(float(projected), 2),
+                     "gain": round(float(projected) - current, 2)})
+    return pd.DataFrame(rows, columns=columns).sort_values("gain", ascending=False).reset_index(drop=True)
+
+
+# Words that carry no opinion, left out of the word clouds (English + common Hinglish).
+CLOUD_STOP_WORDS = {
+    "product", "really", "just", "also", "even", "still", "much", "very", "quite", "got", "get", "one", "use",
+    "used", "using", "bit", "lot", "thing", "things", "day", "days", "time", "times", "would", "could", "it's",
+    "i'm", "i've", "don't", "doesn't", "didn't", "can't", "won't", "isn't", "wasn't", "hai", "hain", "ka", "ki",
+    "ke", "ko", "se", "aur", "bhi", "ye", "yeh", "wo", "woh", "kya", "tha", "thi", "ho", "hota", "raha", "rahi",
+    "bahut", "bohot", "nahi", "nahin", "ekdum", "kaafi", "par", "mein", "main", "toh", "to", "na", "hi",
+}
+
+
+def top_words(mentions: pd.DataFrame, polarity: str, limit: int = 28) -> list[tuple[str, int]]:
+    """Most frequent meaningful words in praise or complaint clauses, as (word, reviews using it)."""
+    from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+
+    clauses = mentions[mentions["polarity"] == polarity].drop_duplicates(["review_id", "clause"])
+    if clauses.empty:
+        return []
+    stop = ENGLISH_STOP_WORDS | CLOUD_STOP_WORDS
+    counts: dict[str, set] = {}
+    for review_id, clause in zip(clauses["review_id"], clauses["clause"]):
+        for word in re.findall(r"[a-zऀ-ॿ][a-z'ऀ-ॿ]{2,}", str(clause).lower()):
+            if word not in stop:
+                counts.setdefault(word, set()).add(review_id)
+    ranked = sorted(((w, len(ids)) for w, ids in counts.items()), key=lambda item: (-item[1], item[0]))
+    return [(w, n) for w, n in ranked if n >= 2][:limit]
 
 
 def health_score(df: pd.DataFrame) -> int:

@@ -11,9 +11,16 @@ import streamlit as st
 
 import ai_service
 import charts
+import compare as comparison
+import replies
+import report
 import styles
+import video_reviews
+import wishlist
+from emotions import EMOTION_ORDER, emotion_counts, emotion_label
 from fake_risk import DISCLAIMER as RISK_DISCLAIMER
-from insights import WEIGHTS, build_stats_context, evidence_for_theme, health_score, key_insights
+from insights import (WEIGHTS, build_stats_context, evidence_for_theme, fix_impact, headline, health_score,
+                      key_insights, top_words)
 from retrieval import find_relevant_reviews
 from sentiment import sentiment_counts
 from themes import theme_summary
@@ -32,6 +39,8 @@ class Context:
     is_sample: bool
     date_label: str
     insights: list = field(default_factory=list)
+    all_reviews: pd.DataFrame | None = None   # every product in the date range (for comparisons)
+    all_mentions: pd.DataFrame | None = None
 
     @property
     def selection_key(self) -> str:
@@ -78,6 +87,9 @@ def review_table(df: pd.DataFrame, extra: list[str] | None = None, order: list[s
             "risk_score": st.column_config.ProgressColumn("Risk score", min_value=0, max_value=100, format="%d"),
             "risk_reasons": st.column_config.ListColumn("Why flagged", width="large"),
             "themes": st.column_config.ListColumn("Themes"),
+            "source": st.column_config.TextColumn("Source", width="small"),
+            "source_file": st.column_config.TextColumn("File", width="small"),
+            "emotion": st.column_config.TextColumn("Emotion", width="small"),
             "relevance": st.column_config.ProgressColumn("Relevance", min_value=0, max_value=1.5, format="%.2f"),
         },
     )
@@ -107,9 +119,46 @@ def ai_unavailable_note() -> None:
     st.info(ai_service.NOT_CONFIGURED_MESSAGE + " The sections below are computed directly from the data.", icon="🔑")
 
 
+def added_videos() -> dict[str, dict]:
+    """Video reviews added in this session, by review ID."""
+    return {video["review_id"]: video for video in st.session_state.get("video_reviews", [])}
+
+
+def moment_for(review_id: str, clause: str, videos: dict[str, dict] | None = None) -> tuple[str, str] | None:
+    """Link to the moment in a YouTube review where `clause` is said, if it is a video review with captions."""
+    video = (videos if videos is not None else added_videos()).get(str(review_id))
+    return video_reviews.moment_link(video, clause) if video else None
+
+
 def theme_quotes(ctx: Context, theme: str, polarity: str, limit: int = 2) -> None:
+    videos = added_videos()
     for _, row in evidence_for_theme(ctx.mentions, theme, polarity, limit).iterrows():
-        styles.quote(row, highlight=row["clause"])
+        source = ctx.reviews.loc[ctx.reviews["review_id"] == row["review_id"], "source"]
+        row["source"] = source.iloc[0] if len(source) else "Text review"
+        styles.quote(row, highlight=row["clause"], moment=moment_for(row["review_id"], row["clause"], videos))
+
+
+# ---------------------------------------------------------------- Welcome tour
+
+WELCOME_TILES = [
+    ("🏠", "Overview", "A one-line headline, health score, theme map and the problems to fix first."),
+    ("⚖️", "Compare Products", "Two products head to head, with an AI verdict."),
+    ("🎬", "Video Reviews", "Add YouTube links or video files and jump to the moment a reviewer says something."),
+    ("💡", "Feature Wishlist", "What customers ask you to build next, most requested first."),
+    ("✉️", "Reply Studio", "Draft polite, specific replies to unhappy customers in one click."),
+    ("📄", "PDF Report", "Download a shareable report from the Overview page."),
+]
+
+
+@st.dialog("👋 Welcome to ProductPulse AI", width="large")
+def welcome() -> None:
+    st.markdown("Turn hundreds of customer reviews (written **and** video) into decisions. "
+                "Everything is computed from your reviews, and every AI claim links back to real ones.")
+    styles.tiles(WELCOME_TILES)
+    st.caption("You're looking at synthetic demo data. Upload your own CSV from the sidebar at any time. "
+               "Reopen this tour with “👋 Welcome tour” in the sidebar.")
+    if st.button("Start exploring", type="primary", width="stretch"):
+        st.rerun()
 
 
 # ---------------------------------------------------------------- Overview
@@ -117,11 +166,11 @@ def theme_quotes(ctx: Context, theme: str, polarity: str, limit: int = 2) -> Non
 def overview(ctx: Context) -> None:
     df = ctx.reviews
     styles.page_header("Dashboard overview", ctx.subject if ctx.subject != "all products" else "All products",
-                       "How customers feel, what they complain about, and what to fix first.",
-                       [ctx.date_label, f"{len(df)} reviews", ctx.source_label])
+                       "How customers feel, what they complain about, and what to fix first.")
     if df.empty:
         st.warning("No reviews match the current filters.")
         return
+    hero_banner(ctx)
 
     counts = sentiment_counts(df)
     total = len(df)
@@ -181,11 +230,33 @@ def overview(ctx: Context) -> None:
                 theme_quotes(ctx, top.theme, "complaint", 2)
                 link("priority", label="Full priority ranking and evidence", icon="🎯")
 
+    summary = theme_summary(ctx.mentions, total)
+    if not summary.empty and (summary["praise"] + summary["complaints"]).sum() > 0:
+        with st.container(border=True):
+            styles.section("Theme map", "Every theme customers talk about. Bigger and higher = discussed more; "
+                                        "left = mostly complaints, right = mostly praise.")
+            st.plotly_chart(charts.theme_map(summary), config={"displayModeBar": False})
+
+    left, right = st.columns((1, 1.4), gap="large")
+    with left:
+        with st.container(border=True):
+            styles.section("Emotions", "The main feeling in each review, beyond positive or negative.")
+            st.plotly_chart(charts.emotion_bars(emotion_counts(df), {e: emotion_label(e) for e in EMOTION_ORDER}),
+                            config={"displayModeBar": False})
+    with right:
+        with st.container(border=True):
+            styles.section("In customers' words", "Words used most when praising (blue) and complaining (red). "
+                                                  "Hover a word to see how many reviews use it.")
+            praise_col, complaint_col = st.columns(2)
+            with praise_col:
+                styles.word_cloud(top_words(ctx.mentions, "praise", 22), charts.SENTIMENT_COLORS["Positive"])
+            with complaint_col:
+                styles.word_cloud(top_words(ctx.mentions, "complaint", 22), charts.SENTIMENT_COLORS["Negative"])
+
     left, right = st.columns(2, gap="large")
     with left:
         with st.container(border=True):
             styles.section("What customers love", "Themes most often praised.")
-            summary = theme_summary(ctx.mentions, total)
             praised = summary[summary["praise"] >= 2].sort_values("praise", ascending=False).head(3)
             if praised.empty:
                 st.write("No recurring praise found.")
@@ -202,6 +273,35 @@ def overview(ctx: Context) -> None:
     with st.container(border=True):
         styles.section("AI summary", "Generated from the reviews in this selection.")
         overall_ai_block(ctx, compact=True)
+
+
+def hero_banner(ctx: Context) -> None:
+    """Health ring plus a headline: computed from the data, or written by the AI on request."""
+    store = st.session_state.setdefault("ai_results", {})
+    key = (ctx.selection_key, "headline")
+    ai_result = store.get(key)
+    text = ai_result["text"] if ai_result else headline(ctx.reviews, ctx.mentions, ctx.priority)
+    chips = [ctx.date_label, f"{len(ctx.reviews):,} reviews", ctx.source_label]
+    styles.hero(health_score(ctx.reviews), "✨ AI headline" if ai_result else "Headline", text, chips)
+    left, right = st.columns((3, 1.2), vertical_alignment="center")
+    with left:
+        if ai_result:
+            st.caption(f"Written by {ai_result['model']}. Based on reviews "
+                       + (", ".join(ai_result["cited_ids"]) or "in this selection") + ".")
+        elif ai_service.is_ai_configured():
+            if st.button("✨ Write the headline with AI", key="ai_headline"):
+                with st.spinner("Reading the reviews..."):
+                    try:
+                        store[key] = ai_service.generate_headline(ctx.reviews, ctx.subject, ctx.stats())
+                        st.rerun()
+                    except ai_service.AIServiceError as exc:
+                        st.error(str(exc))
+    summary = store.get((ctx.selection_key, "overall"))
+    name = "all-products" if ctx.subject == "all products" else ctx.subject.lower().replace(" ", "-")
+    right.download_button(
+        "📄 Download PDF report", lambda: report.build_report(ctx, summary["text"] if summary else None),
+        f"productpulse-report-{name}.pdf", "application/pdf", width="stretch", on_click="ignore",
+        help="A shareable summary of this selection. Includes the AI summary if you have generated it.")
 
 
 def overall_ai_block(ctx: Context, compact: bool = False) -> None:
@@ -412,6 +512,17 @@ Levels need both a score **and** enough evidence, so one complaint is never Crit
             st.plotly_chart(charts.praise_vs_complaints(theme_summary(ctx.mentions, len(ctx.reviews))),
                             config={"displayModeBar": False})
 
+    impact = fix_impact(ctx.reviews, ctx.mentions, ctx.priority)
+    if not impact.empty and impact["gain"].max() > 0:
+        with st.container(border=True):
+            best = impact.iloc[0]
+            styles.section("💰 If you fixed it",
+                           "Estimated average rating if reviews complaining about each issue rated like the rest. "
+                           "Optimistic: some of those reviews mention other problems too.")
+            st.markdown(f"Fixing **{best.theme}** could lift the average rating from **{best.current_avg:.2f}★** "
+                        f"to about **{best.projected_avg:.2f}★** (+{best.gain:.2f}), the biggest gain of any issue.")
+            st.plotly_chart(charts.fix_impact(impact), config={"displayModeBar": False})
+
     table = ctx.priority[["theme", "level", "score", "complaint_reviews", "share_pct", "avg_rating",
                           "recent_rate_pct", "earlier_rate_pct"]]
     st.dataframe(table, hide_index=True, width="stretch", column_config={
@@ -480,8 +591,13 @@ def trends(ctx: Context) -> None:
                                               [0, 100], "%"), config={"displayModeBar": False})
     with right:
         with st.container(border=True):
-            styles.section("Average rating")
-            st.plotly_chart(charts.line_chart(trend, "avg_rating", "Average rating", "#2a78d6", [1, 5.2]),
+            video_rows = df[df["source"] != ai_service.TEXT_SOURCE]
+            styles.section("Average rating", "🎬 Stars mark video reviews." if len(video_rows) else "")
+            events = pd.DataFrame({"date": video_rows["review_date"], "value": video_rows["rating"],
+                                   "label": video_rows["review_id"].map(
+                                       lambda i: added_videos().get(i, {}).get("video_title", i))})
+            st.plotly_chart(charts.line_chart(trend, "avg_rating", "Average rating", "#2a78d6", [0.6, 5.6],
+                                              events=events),
                             config={"displayModeBar": False})
         with st.container(border=True):
             # One level coarser than the other charts: five theme lines per week are too noisy to read.
@@ -568,9 +684,12 @@ def explorer(ctx: Context) -> None:
     sentiments = c2.multiselect("Sentiment", ["Positive", "Neutral", "Negative"])
     languages = c3.multiselect("Language", ["English", "Hinglish", "Hindi"])
     risks = c4.multiselect("Risk", ["High", "Medium", "Low"])
-    c5, c6 = st.columns((1, 2.2))
+    c5, c6, c7 = st.columns((1, 1.6, 1))
     ratings = c5.slider("Rating", 1, 5, (1, 5))
     theme_filter = c6.multiselect("Theme", sorted(ctx.mentions["theme"].unique()))
+    sources = c7.multiselect("Source", sorted(df["source"].unique()))
+    emotion_filter = st.pills("Emotion", [e for e in EMOTION_ORDER if e in set(df["emotion"])],
+                              selection_mode="multi", format_func=emotion_label, key="explorer_emotions")
 
     view = df[(df["rating"] >= ratings[0]) & (df["rating"] <= ratings[1])]
     if query.strip():
@@ -587,19 +706,449 @@ def explorer(ctx: Context) -> None:
     if theme_filter:
         ids = ctx.mentions.loc[ctx.mentions["theme"].isin(theme_filter), "review_id"]
         view = view[view["review_id"].isin(ids)]
+    if sources:
+        view = view[view["source"].isin(sources)]
+    if emotion_filter:
+        view = view[view["emotion"].isin(emotion_filter)]
+    if "source_file" in df.columns and df["source_file"].nunique() > 1:
+        files = st.multiselect("File", sorted(df["source_file"].dropna().unique()), key="explorer_files",
+                               placeholder="All uploaded files")
+        if files:
+            view = view[view["source_file"].isin(files)]
 
-    top_left, top_right = st.columns((3, 1))
+    top_left, top_mid, top_right = st.columns((2.2, 1.2, 1), vertical_alignment="center")
     top_left.caption(f"{len(view)} of {len(df)} reviews")
+    layout = top_mid.segmented_control("View", ["🗂️ Cards", "📋 Table"], default="🗂️ Cards",
+                                       key="explorer_view", label_visibility="collapsed")
     export = view.drop(columns=["risk_reasons", "themes"]).assign(
         themes=view["themes"].str.join("; "), risk_reasons=view["risk_reasons"].str.join("; "))
     top_right.download_button("Download CSV", export.to_csv(index=False).encode("utf-8"),
                               "productpulse_reviews.csv", "text/csv", width="stretch")
-    review_table(view.sort_values("review_date", ascending=False),
-                 extra=["sentiment_score", "themes", "risk_level"])
+    view = view.sort_values("review_date", ascending=False)
+    if layout == "📋 Table":
+        review_table(view, extra=["sentiment_score", "emotion", "themes", "risk_level", "source", "source_file"])
+    else:
+        review_cards(ctx, view)
 
     with st.container(border=True):
         styles.section("Languages", "Detected with a script + vocabulary heuristic.")
         st.plotly_chart(charts.language_mix(df), config={"displayModeBar": False})
+
+
+# ---------------------------------------------------------------- Video Reviews
+
+ESTIMATE_RATING = "Estimate from what the reviewer says"
+
+
+def video_fields(form: str, products: list[str], product_help: str, date_help: str) -> tuple:
+    """Product, rating and date inputs shared by both ways of adding videos."""
+    c1, c2, c3 = st.columns((2, 1.4, 1))
+    product = c1.selectbox("Product", products, index=None, accept_new_options=True, key=f"{form}_product",
+                           placeholder="Choose a product or type a new name", help=product_help)
+    rating = c2.selectbox("Star rating", [ESTIMATE_RATING, 5, 4, 3, 2, 1], key=f"{form}_rating",
+                          help="Videos have no star rating. By default it is estimated from the sentiment of "
+                               "what the reviewer says, and shown as estimated.")
+    date = c3.date_input("Review date", value=None, key=f"{form}_date", help=date_help)
+    return product or "", None if rating == ESTIMATE_RATING else int(rating), date
+
+
+def add_videos(items: list, existing_id, make) -> None:
+    """Transcribe each item, add the new reviews to the session, then rerun so every page includes them."""
+    added = st.session_state.setdefault("video_reviews", [])
+    known = {video["review_id"] for video in added}
+    messages = []
+    with st.status(f"Processing {len(items)} video(s). Longer videos can take a minute or two...",
+                   expanded=True) as status:
+        for item in items:
+            name = getattr(item, "name", item)
+            if existing_id(item) in known:
+                messages.append(("warning", f"{name} was already added."))
+                continue
+            st.markdown(f"**{name}**")
+            try:
+                review = make(item, lambda message: st.write(f"↳ {message}..."))
+            except video_reviews.VideoReviewError as exc:
+                messages.append(("error", str(exc)))
+                continue
+            added.append(review)
+            known.add(review["review_id"])
+            messages.append(("success", f"Added “{review['video_title']}” as review {review['review_id']} "
+                                        f"({review['transcript_method']}, {len(review['review_text'].split())} words)."))
+        status.update(label="Done", state="complete", expanded=False)
+    if not video_reviews.save(added):
+        messages.append(("warning", "The videos could not be saved to disk, so they will only last for this session."))
+    st.session_state["video_messages"] = messages
+    st.rerun()
+
+
+def videos(ctx: Context) -> None:
+    added = st.session_state.setdefault("video_reviews", [])
+    styles.page_header("Data", "Video Reviews",
+                       "Add review videos from YouTube or your computer. Each video is transcribed and then "
+                       "analysed like a written review on every page.", [f"{len(added)} video(s) added"])
+    for kind, message in st.session_state.pop("video_messages", []):
+        getattr(st, kind)(message)
+
+    products = sorted(ctx.reviews["product_name"].unique()) if not ctx.reviews.empty else []
+    can_transcribe = ai_service.can_transcribe_video()
+    youtube_tab, upload_tab = st.tabs(["▶️ YouTube links", "📁 Upload video files"])
+
+    with youtube_tab:
+        st.caption("The video's captions are used when it has them (no API key needed). Videos without captions "
+                   + ("are transcribed by Gemini." if can_transcribe else "need a Gemini API key."))
+        with st.form("youtube_form", border=False, clear_on_submit=True):
+            links = st.text_area("YouTube links", height=110,
+                                 placeholder="One link per line, e.g.\nhttps://www.youtube.com/watch?v=...\nhttps://youtu.be/...")
+            product, rating, date = video_fields("yt", products, "Leave empty to use the video's title.",
+                                                 "Leave empty to use the date the video was uploaded.")
+            submitted = st.form_submit_button("Add YouTube videos", type="primary")
+        if submitted:
+            lines = list(dict.fromkeys(line.strip() for line in links.splitlines() if line.strip()))
+            if not lines:
+                st.warning("Paste at least one YouTube link.")
+            else:
+                add_videos(
+                    lines,
+                    lambda line: video_reviews.review_id(video_reviews.YOUTUBE_SOURCE, video_reviews.youtube_key(
+                        video_reviews.parse_youtube_id(line) or line)),
+                    lambda line, step: video_reviews.youtube_review(line, product, rating, date, step))
+
+    with upload_tab:
+        if not can_transcribe:
+            st.info(ai_service.VIDEO_NEEDS_GEMINI_MESSAGE, icon="🔑")
+        else:
+            st.caption("Gemini transcribes the speech in each file. Audio files (MP3, WAV, M4A) work too.")
+        with st.form("upload_form", border=False, clear_on_submit=True):
+            files = st.file_uploader("Video files", type=list(video_reviews.VIDEO_MIME_TYPES),
+                                     accept_multiple_files=True, disabled=not can_transcribe)
+            product, rating, date = video_fields("up", products, "Which product the videos review (required).",
+                                                 "Leave empty to use today's date.")
+            submitted = st.form_submit_button("Transcribe and add", type="primary", disabled=not can_transcribe)
+        if submitted:
+            if not files:
+                st.warning("Choose at least one video file.")
+            elif not product.strip():
+                st.warning("Choose or type the product these videos review.")
+            else:
+                add_videos(
+                    files,
+                    lambda f: video_reviews.review_id(video_reviews.UPLOAD_SOURCE,
+                                                      video_reviews.upload_key(f.getvalue())),
+                    lambda f, step: video_reviews.uploaded_video_review(f.getvalue(), f.name, product, rating, date,
+                                                                        step))
+
+    if not added:
+        return
+    st.divider()
+    styles.section("Added videos", "Saved on this computer, so they are still here next time you open the app.")
+    video_summary(ctx, added)
+    analysed = ctx.reviews.set_index("review_id")
+    hidden = [v for v in added if v["review_id"] not in analysed.index]
+    if hidden:
+        st.caption(f"{len(hidden)} video(s) are outside the current product or date filter, so they are not in "
+                   "the analysis right now.")
+    columns = st.columns(3, gap="medium")
+    for i, video in enumerate(added):
+        sentiment = analysed.loc[video["review_id"], "sentiment"] if video["review_id"] in analysed.index else None
+        thumbnail = video_reviews.thumbnail_url(video["video_id"]) if video.get("video_id") else None
+        with columns[i % 3]:
+            styles.html_block(styles.video_card(video, sentiment, thumbnail,
+                                                video_reviews.format_views(video.get("views"))))
+            with st.popover("Transcript & key moments", width="stretch"):
+                video_details(ctx, video)
+    st.space("small")
+    if st.button("Remove all videos", icon="🗑️"):
+        st.session_state["video_reviews"] = []
+        video_reviews.save([])
+        st.rerun()
+
+
+def video_summary(ctx: Context, added: list[dict]) -> None:
+    """Audience reach: how many people watched the videos, and how many watched a negative one."""
+    sentiments = ctx.reviews.set_index("review_id")["sentiment"]
+    views = [int(v.get("views") or 0) for v in added]
+    negative = sum(n for v, n in zip(added, views) if sentiments.get(v["review_id"]) == "Negative")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Video reviews", len(added), border=True)
+    c2.metric("Total views", video_reviews.format_views(sum(views)).replace(" views", "") or "–", border=True,
+              help="YouTube view counts when the videos were added. Uploaded files have no views.")
+    c3.metric("Views of negative videos", video_reviews.format_views(negative).replace(" views", "") or "0",
+              border=True, help="How many people may have seen a negative video review: its reach.")
+
+
+def video_details(ctx: Context, video: dict) -> None:
+    """Key moments (what the reviewer praises or criticises, linked to the second they say it) and the transcript."""
+    st.markdown(f"**{video['video_title']}**")
+    st.caption(f"{video['transcript_method']} · {len(video['review_text'].split()):,} words · "
+               f"rating {video['rating']}★{' (estimated)' if video['rating_estimated'] else ''}")
+    moments = ctx.mentions[(ctx.mentions["review_id"] == video["review_id"])
+                           & ctx.mentions["polarity"].isin(["praise", "complaint"])]
+    if not moments.empty:
+        styles.section("Key moments")
+        for row in moments.itertuples():
+            icon = "👍" if row.polarity == "praise" else "👎"
+            link_info = video_reviews.moment_link(video, row.clause)
+            when = f"[▶ {link_info[1]}]({link_info[0]}) · " if link_info else ""
+            clause = row.clause if len(row.clause) <= 220 else row.clause[:220].rsplit(" ", 1)[0] + " …"
+            st.markdown(f"{when}{icon} **{row.theme}**: “{clause}”")
+        if not video.get("timestamps"):
+            st.caption("Time links need YouTube captions, so they are not available for this video.")
+    styles.section("Transcript")
+    st.text(video["review_text"])
+    if st.button("Remove this video", key=f"remove_{video['review_id']}", icon="🗑️"):
+        st.session_state["video_reviews"] = [v for v in st.session_state.get("video_reviews", [])
+                                             if v["review_id"] != video["review_id"]]
+        video_reviews.save(st.session_state["video_reviews"])
+        st.rerun()
+
+
+# ---------------------------------------------------------------- Compare Products
+
+def compare(ctx: Context) -> None:
+    styles.page_header("Dashboard", "Compare Products",
+                       "Two products head to head: ratings, sentiment and how customers feel about each theme.",
+                       [ctx.date_label])
+    reviews = ctx.all_reviews if ctx.all_reviews is not None else ctx.reviews
+    mentions = ctx.all_mentions if ctx.all_mentions is not None else ctx.mentions
+    products = reviews["product_name"].value_counts().index.tolist()
+    if len(products) < 2:
+        st.info("Comparing needs at least two products in the selected dates. Choose a dataset with more "
+                "products, or widen the date range.", icon="⚖️")
+        return
+    c1, c2 = st.columns(2)
+    name_a = c1.selectbox("Product A", products, index=0, key="compare_a")
+    name_b = c2.selectbox("Product B", [p for p in products if p != name_a], index=0, key="compare_b")
+    reviews_a, reviews_b = reviews[reviews["product_name"] == name_a], reviews[reviews["product_name"] == name_b]
+    mentions_a = mentions[mentions["review_id"].isin(reviews_a["review_id"])]
+    mentions_b = mentions[mentions["review_id"].isin(reviews_b["review_id"])]
+    metrics_a, metrics_b = comparison.product_metrics(reviews_a), comparison.product_metrics(reviews_b)
+
+    formats = {"Reviews": "{:,}", "Average rating": "{:.2f} ★", "Positive": "{:.0f}%", "Negative": "{:.0f}%",
+               "Health score": "{}/100"}
+    rows = [(metric, formats[metric].format(metrics_a[column]), formats[metric].format(metrics_b[column]),
+             comparison.winner(metric, metrics_a, metrics_b))
+            for metric, (column, _) in comparison.METRICS.items()]
+    styles.versus((name_a, name_b), rows, tuple(charts.COMPARE_COLORS))
+    if min(metrics_a["reviews"], metrics_b["reviews"]) < 10:
+        st.caption("⚠️ One product has fewer than 10 reviews in this range, so treat the differences with caution.")
+
+    table = comparison.theme_table(mentions_a, mentions_b)
+    left, right = st.columns((1.1, 1), gap="large")
+    with left:
+        with st.container(border=True):
+            styles.section("Theme satisfaction", "Share of reviews mentioning a theme that praise it (0-100). "
+                                                 f"Needs {comparison.MIN_THEME_MENTIONS}+ reviews per theme.")
+            if table.dropna(subset=["satisfaction_a", "satisfaction_b"], how="all").empty:
+                st.write("Not enough theme mentions to compare yet.")
+            else:
+                st.plotly_chart(charts.theme_radar(table, name_a, name_b), config={"displayModeBar": False})
+    with right:
+        with st.container(border=True):
+            styles.section("Star ratings", "Share of each product's reviews.")
+            st.plotly_chart(charts.compare_ratings(reviews_a, name_a, reviews_b, name_b),
+                            config={"displayModeBar": False})
+        with st.container(border=True):
+            styles.section("Clear differences", "Themes where satisfaction differs by 15 points or more.")
+            for name, side, color in ((name_a, "a", charts.COMPARE_COLORS[0]), (name_b, "b", charts.COMPARE_COLORS[1])):
+                better, _ = comparison.strengths_and_weaknesses(table, side)
+                text = ", ".join(f"**{t}**" for t in better) if better else "nothing clearly better"
+                styles.html_block(f'<div style="margin:0.25rem 0"><span style="color:{color};font-weight:700">'
+                                  f'{styles.md_to_html(name)}</span> wins on {styles.md_to_html(text)}</div>')
+
+    with st.expander("Theme-by-theme numbers"):
+        st.dataframe(table, hide_index=True, width="stretch", column_config={
+            "theme": "Theme",
+            "praise_a": st.column_config.NumberColumn(f"{name_a} · praise"),
+            "complaints_a": st.column_config.NumberColumn(f"{name_a} · complaints"),
+            "satisfaction_a": st.column_config.ProgressColumn(f"{name_a} · satisfaction", min_value=0, max_value=100, format="%.0f"),
+            "praise_b": st.column_config.NumberColumn(f"{name_b} · praise"),
+            "complaints_b": st.column_config.NumberColumn(f"{name_b} · complaints"),
+            "satisfaction_b": st.column_config.ProgressColumn(f"{name_b} · satisfaction", min_value=0, max_value=100, format="%.0f"),
+        })
+
+    with st.container(border=True):
+        styles.section("✨ AI verdict", "Which product customers prefer and why, with cited reviews.")
+        if not ai_service.is_ai_configured():
+            st.info(ai_service.NOT_CONFIGURED_MESSAGE, icon="🔑")
+            return
+        store = st.session_state.setdefault("ai_results", {})
+        ids = "|".join(sorted(reviews_a["review_id"].astype(str)) + sorted(reviews_b["review_id"].astype(str)))
+        key = ("compare", name_a, name_b, hashlib.sha1(ids.encode()).hexdigest(), ai_service.provider_label())
+        if key not in store and st.button("Compare with AI", type="primary"):
+            with st.spinner(f"Reading the reviews of {name_a} and {name_b}..."):
+                try:
+                    stats = comparison.stats_text(name_a, metrics_a, name_b, metrics_b, table)
+                    store[key] = ai_service.compare_products(reviews_a, name_a, reviews_b, name_b, stats)
+                except ai_service.AIServiceError as exc:
+                    st.error(str(exc))
+        if key in store:
+            show_ai_result(store[key], pd.concat([reviews_a, reviews_b]))
+
+
+# ---------------------------------------------------------------- Review cards
+
+CARDS_PER_PAGE = 12
+
+
+def review_cards(ctx: Context, view: pd.DataFrame) -> None:
+    """Reviews as cards in two columns, with praise and complaint highlights, paged."""
+    if view.empty:
+        st.info("No reviews match these filters.")
+        return
+    pages = (len(view) - 1) // CARDS_PER_PAGE + 1
+    page = 1
+    if pages > 1:
+        page = st.number_input(f"Page (of {pages})", min_value=1, max_value=pages, value=1, step=1,
+                               key="explorer_page", width=160)
+    chunk = view.iloc[(page - 1) * CARDS_PER_PAGE: page * CARDS_PER_PAGE]
+    clauses = ctx.mentions[ctx.mentions["review_id"].isin(chunk["review_id"])].groupby("review_id").apply(
+        lambda g: list(zip(g["clause"], g["polarity"])), include_groups=False)
+    videos = added_videos()
+    columns = st.columns(2, gap="medium")
+    for i, (_, row) in enumerate(chunk.iterrows()):
+        found = clauses.get(row["review_id"], [])
+        moment = next((m for m in (moment_for(row["review_id"], c, videos) for c, _ in found) if m), None)
+        with columns[i % 2]:
+            styles.html_block(styles.review_card(row, found, moment, emotion=emotion_label))
+
+
+# ---------------------------------------------------------------- Feature Wishlist
+
+def wishlist_page(ctx: Context) -> None:
+    styles.page_header("Issues", "Feature Wishlist",
+                       "What customers ask you to add or change, grouped and ranked by how many reviews ask for it.",
+                       [ctx.subject, f"{len(ctx.reviews)} reviews"])
+    requests = wishlist.extract_requests(ctx.reviews)
+    if requests.empty:
+        st.info("No feature requests found in this selection. Requests are sentences like “I wish it had…”, "
+                "“please add…”, “it should have…” or “…hona chahiye”.", icon="💡")
+        return
+    groups = wishlist.group_requests(requests)
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Distinct wishes", len(groups), border=True)
+    c2.metric("Reviews with a request", requests["review_id"].nunique(), border=True)
+    c3.metric("Asked for most", f"{groups.iloc[0]['reviews']} reviews", border=True,
+              help=groups.iloc[0]["request"])
+
+    styles.section("Most requested", "Similar requests are grouped together. The wording shown is the most common one.")
+    top = max(int(groups["reviews"].max()), 1)
+    for rank, row in enumerate(groups.head(10).itertuples(), start=1):
+        with st.container(border=True):
+            left, right = st.columns((0.12, 1), vertical_alignment="center")
+            left.markdown(f"<div style='font-size:1.6rem;font-weight:750;opacity:0.5;text-align:center'>#{rank}</div>",
+                          unsafe_allow_html=True)
+            with right:
+                st.markdown(f"**{row.request}**")
+                st.progress(row.reviews / top, text=f"{row.reviews} review{'s' if row.reviews != 1 else ''} · "
+                                                    f"{', '.join(row.products)} · latest {row.last_date:%d %b %Y}")
+                if len(row.examples) > 1:
+                    st.caption("Also asked as: " + " · ".join(f"“{e}”" for e in row.examples[1:]))
+                st.caption("Reviews: " + ", ".join(row.review_ids[:8]) + (" …" if len(row.review_ids) > 8 else ""))
+
+    with st.container(border=True):
+        styles.section("✨ AI wishlist", "The AI reads every review with a request, merges the ones that ask for the "
+                                        "same thing, and suggests quick wins.")
+        if not ai_service.is_ai_configured():
+            st.info(ai_service.NOT_CONFIGURED_MESSAGE, icon="🔑")
+        else:
+            store = st.session_state.setdefault("ai_results", {})
+            key = (ctx.selection_key, "wishlist")
+            if key not in store and st.button("Summarise the wishlist with AI", type="primary"):
+                with st.spinner("Reading the requests..."):
+                    try:
+                        store[key] = ai_service.summarise_wishlist(
+                            ctx.reviews[ctx.reviews["review_id"].isin(requests["review_id"])], ctx.subject)
+                    except ai_service.AIServiceError as exc:
+                        st.error(str(exc))
+            if key in store:
+                show_ai_result(store[key], ctx.reviews)
+
+    with st.expander(f"All {len(requests)} request sentences"):
+        st.dataframe(requests.sort_values("review_date", ascending=False), hide_index=True, width="stretch",
+                     column_config={"review_id": "ID", "product_name": "Product",
+                                    "review_date": st.column_config.DateColumn("Date", format="DD MMM YYYY"),
+                                    "rating": st.column_config.NumberColumn("Rating", format="%d ★"),
+                                    "request": st.column_config.TextColumn("Request", width="large")})
+
+
+# ---------------------------------------------------------------- Reply Studio
+
+REPLIES_PER_PAGE = 6
+REPLY_FILTERS = {"Negative reviews": lambda df: df[df["sentiment"] == "Negative"],
+                 "Rated 1-3 stars": lambda df: df[df["rating"] <= 3],
+                 "All reviews": lambda df: df}
+
+
+def make_reply(row: pd.Series, mentions: pd.DataFrame, tone: str, signature: str, use_ai: bool) -> str:
+    if use_ai:
+        return ai_service.draft_reply(row["review_text"], row["product_name"], row["rating"], tone, signature)
+    found = mentions[mentions["review_id"] == row["review_id"]]
+    return replies.template_reply(row["product_name"], found.loc[found["polarity"] == "complaint", "theme"].tolist(),
+                                  found.loc[found["polarity"] == "praise", "theme"].tolist(), tone, signature)
+
+
+def replies_page(ctx: Context) -> None:
+    styles.page_header("Issues", "Reply Studio",
+                       "Draft a public reply to each unhappy customer. Always read a draft before you post it.",
+                       [ctx.subject])
+    if ctx.reviews.empty:
+        st.warning("No reviews match the current filters.")
+        return
+    use_ai = ai_service.is_ai_configured()
+    c1, c2, c3, c4 = st.columns((1.3, 1.2, 1.2, 1.4))
+    tone = c1.segmented_control("Tone", replies.TONES, default="Friendly", key="reply_tone") or "Friendly"
+    which = c2.selectbox("Show", list(REPLY_FILTERS), key="reply_filter")
+    themes = c3.multiselect("About", sorted(ctx.mentions["theme"].unique()), key="reply_themes",
+                            placeholder="Any theme")
+    signature = c4.text_input("Sign as", placeholder="e.g. Priya, Customer Care", key="reply_signature")
+    st.caption(("✨ Replies are written by " + ai_service.provider_label() + " for each review.") if use_ai else
+               "Replies are filled in from templates using the themes found in each review. "
+               "Set AI_API_KEY for replies written for each review.")
+
+    view = REPLY_FILTERS[which](ctx.reviews)
+    if themes:
+        view = view[view["review_id"].isin(ctx.mentions.loc[ctx.mentions["theme"].isin(themes), "review_id"])]
+    view = view.sort_values("review_date", ascending=False)
+    if view.empty:
+        st.success("No reviews need a reply with these filters.", icon="✅")
+        return
+    pages = (len(view) - 1) // REPLIES_PER_PAGE + 1
+    page = st.number_input(f"Page (of {pages}) · {len(view)} reviews", 1, pages, 1, key="reply_page", width=200) \
+        if pages > 1 else 1
+    chunk = view.iloc[(page - 1) * REPLIES_PER_PAGE: page * REPLIES_PER_PAGE]
+    drafts = st.session_state.setdefault("reply_drafts", {})
+    draft_key = lambda review_id: (review_id, tone, signature, use_ai)  # noqa: E731
+
+    missing = [row for _, row in chunk.iterrows() if draft_key(row["review_id"]) not in drafts]
+    if missing and st.button(f"✍️ Draft replies for all {len(missing)} on this page", type="primary"):
+        with st.spinner("Writing replies..."):
+            with ThreadPoolExecutor(max_workers=4) as pool:
+                futures = {row["review_id"]: pool.submit(make_reply, row, ctx.mentions, tone, signature, use_ai)
+                           for row in missing}
+            for review_id, future in futures.items():
+                try:
+                    drafts[draft_key(review_id)] = future.result()
+                except ai_service.AIServiceError as exc:
+                    st.error(f"{review_id}: {exc}")
+
+    clauses = ctx.mentions[ctx.mentions["review_id"].isin(chunk["review_id"])].groupby("review_id").apply(
+        lambda g: list(zip(g["clause"], g["polarity"])), include_groups=False)
+    for _, row in chunk.iterrows():
+        left, right = st.columns((1, 1), gap="medium")
+        with left:
+            styles.html_block(styles.review_card(row, clauses.get(row["review_id"], []), emotion=emotion_label))
+        with right:
+            key = draft_key(row["review_id"])
+            if key in drafts:
+                st.code(drafts[key], language=None, wrap_lines=True)
+                st.caption("Use the copy icon at the top right of the box. Check it before posting.")
+            elif st.button("Draft a reply", key=f"draft_{row['review_id']}", icon="✍️"):
+                with st.spinner("Writing..."):
+                    try:
+                        drafts[key] = make_reply(row, ctx.mentions, tone, signature, use_ai)
+                        st.rerun()
+                    except ai_service.AIServiceError as exc:
+                        st.error(str(exc))
 
 
 def build_insights(ctx: Context) -> Context:

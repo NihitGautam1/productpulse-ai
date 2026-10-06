@@ -14,3 +14,6 @@ __pycache__/
 .idea/
 .vscode/
 .DS_Store
+
+# Video reviews saved by the app
+.productpulse/
